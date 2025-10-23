@@ -1,0 +1,31 @@
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["seguranca"]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  login         String   @unique @db.VarChar(90)
+  password_hash String
+  role          Role
+  name          String   @db.VarChar(90)
+  createdAt     DateTime @default(now())
+  active        Boolean  @default(true)
+
+  @@map("users")
+  @@schema("seguranca")
+}
+
+enum Role {
+  ADMIN
+
+  @@schema("seguranca")
+}

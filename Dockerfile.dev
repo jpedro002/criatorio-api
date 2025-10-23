@@ -1,0 +1,32 @@
+FROM node:lts
+
+RUN apt-get update && \
+    apt-get install -y openssl vim bash tzdata zsh git curl && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV TZ=America/Fortaleza
+
+WORKDIR /root/app
+
+COPY package.json ./
+
+RUN npm install -g pnpm
+
+RUN pnpm install
+
+COPY . .
+
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+
+RUN echo "plugins=(git zsh-autosuggestions zsh-syntax-highlighting)" >> /root/.zshrc
+RUN echo "source /root/.oh-my-zsh/oh-my-zsh.sh" >> /root/.zshrc
+RUN echo "source /root/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" >> /root/.zshrc
+
+RUN pnpm prisma generate
+
+EXPOSE 3000
+
+CMD ["zsh", "-c", "pnpm dev"]

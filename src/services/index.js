@@ -1,0 +1,5 @@
+export * from 'src/services/_prisma.service'
+export * from 'src/services/base.service'
+export * from 'src/services/_minio.service'
+export * from 'src/services/_integraFiscalize.service'
+export * from 'src/services/_axios'

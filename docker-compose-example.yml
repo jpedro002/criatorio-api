@@ -1,0 +1,65 @@
+services:
+  fiscalize-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fiscalize-api-dev
+    ports:
+      - '3000:3000'
+      - '5555:5555'  # Porta para o Prisma Studio
+
+    volumes:
+      - .:/root/app
+      - /root/app/node_modules
+    networks:
+      - fiscalize-network
+    env_file:
+      - .env
+    depends_on:
+      - fiscalize-postgres-db
+      - fiscalize-minio
+    stdin_open: true
+    tty: true
+
+  fiscalize-postgres-db:
+    image: bitnami/postgresql:14
+    container_name: fiscalize-postgres-db
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=${DATABASE_USERNAME:-docker}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-docker}
+      - POSTGRES_DB=${DATABASE_NAME:-fiscalize}
+    volumes:
+      - fiscalize_db_volume:/bitnami/postgresql
+    networks:
+      - fiscalize-network
+    env_file:
+      - .env
+
+  fiscalize-minio:
+    container_name: fiscalize-minio-dev
+    image: minio/minio:RELEASE.2024-07-16T23-46-41Z
+    command: server /data --console-address ":9001"
+    ports:
+      - '9000:9000'   # API
+      - '9001:9001'   # Console Web UI
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - fiscalize_minio_data:/bitnami/minio/data
+    networks:
+      - fiscalize-network
+    env_file:
+      - .env
+
+volumes:
+  fiscalize_db_volume:
+    driver: local
+  fiscalize_minio_data:
+    driver: local
+
+networks:
+  fiscalize-network:
+    driver: bridge
