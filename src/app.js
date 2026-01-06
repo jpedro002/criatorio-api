@@ -9,7 +9,7 @@ import swaggerPlugin from 'src/plugins/_swagger'
 import { z } from 'zod'
 import { errorHandler, useUtils } from './helpers'
 import { jwtPlugin } from './plugins'
-import { minioRoutes, segurancaRoutes } from './routes'
+import { minioRoutes, segurancaRoutes, aveRoutes } from './routes'
 
 export async function createApp() {
 	// biome-ignore lint/correctness/noUnusedVariables: <>
@@ -45,6 +45,9 @@ export async function createApp() {
 
 	// Registrar rotas do MinIO
 	server.register(minioRoutes, { prefix: '/api/minio' })
+
+	// Registrar rotas de Aves
+	server.register(aveRoutes, { prefix: '/api/aves' })
 
 	// if (settings.NODE_ENV === 'development') {
 	// 	server.addHook('onRequest', async () => {

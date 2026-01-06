@@ -1,17 +1,40 @@
 services:
-  fiscalize-api:
+  criatorio-postgres-db:
+    image: postgres:16-alpine
+    container_name: criatorio-postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-docker}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-docker}
+      POSTGRES_DB: ${DATABASE_NAME:-criatorio}
+    ports:
+      - '5432:5432'
+    volumes:
+      - criatorio_db_volume:/var/lib/postgresql/data
+    networks:
+      - criatorio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-docker}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  criatorio-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fiscalize-api
+    container_name: criatorio-api
     restart: unless-stopped
     ports:
       - '3366:3000'
       - '5555:5555'
     networks:
-      - fiscalize-network
+      - criatorio-network
     env_file:
       - .env
+    depends_on:
+      criatorio-postgres-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
@@ -20,8 +43,8 @@ services:
       start_period: 40s
     
 
-  fiscalize-minio:
-    container_name: fiscalize-minio
+  criatorio-minio:
+    container_name: criatorio-minio
     image: minio/minio:RELEASE.2025-02-03T21-03-04Z-cpuv1
     command: server /data --address ":9000" --console-address ":9001"
     restart: unless-stopped
@@ -32,9 +55,9 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - fiscalize_minio_data:/data
+      - criatorio_minio_data:/data
     networks:
-      - fiscalize-network
+      - criatorio-network
     env_file:
       - .env
     healthcheck:
@@ -45,11 +68,11 @@ services:
       start_period: 30s
 
 volumes:
-  fiscalize_db_volume:
+  criatorio_db_volume:
     driver: local
-  fiscalize_minio_data:
+  criatorio_minio_data:
     driver: local
 
 networks:
-  fiscalize-network:
+  criatorio-network:
     driver: bridge

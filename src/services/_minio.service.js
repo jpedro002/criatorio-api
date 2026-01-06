@@ -2,17 +2,21 @@ import * as Minio from 'minio'
 import { settings } from 'src/config'
 import { v4 as uuidv4 } from 'uuid'
 
-const client = new Minio.Client({
-	endPoint: settings.MINIO_ENDPOINT,
-	port: settings.MINIO_PORT,
-	useSSL: settings.MINIO_USE_SSL,
-	accessKey: settings.MINIO_ACCESS_KEY,
-	secretKey: settings.MINIO_SECRET_KEY
-})
-
+let client = null
 const bucketName = settings.MINIO_BUCKET_NAME
 
+if (settings.MINIO_ENDPOINT) {
+	client = new Minio.Client({
+		endPoint: settings.MINIO_ENDPOINT,
+		port: settings.MINIO_PORT,
+		useSSL: settings.MINIO_USE_SSL,
+		accessKey: settings.MINIO_ACCESS_KEY,
+		secretKey: settings.MINIO_SECRET_KEY
+	})
+}
+
 async function ensureBucketExists() {
+	if (!client) throw new Error('MinIO client not configured')
 	const exists = await client.bucketExists(bucketName)
 	if (!exists) {
 		const region = settings.MINIO_REGION || undefined
@@ -47,6 +51,7 @@ async function generatePostPolicy(
 	maxSize = 10 * 1024 * 1024,
 	expiryMinutes = 15
 ) {
+	if (!client) throw new Error('MinIO client not configured')
 	await ensureBucketExists()
 	const objectPrefix = generateObjectPrefix(demandaId)
 	const expiry = new Date()
@@ -68,16 +73,19 @@ async function generatePostPolicy(
 }
 
 async function getObjectUrl(objectKey, expires = 7 * 24 * 60 * 60) {
+	if (!client) throw new Error('MinIO client not configured')
 	return await client.presignedGetObject(bucketName, objectKey, expires, {
 		'response-content-disposition': 'attachment'
 	})
 }
 
 async function deleteObject(objectKey) {
+	if (!client) throw new Error('MinIO client not configured')
 	return await client.removeObject(bucketName, objectKey)
 }
 
 async function listObjects(prefix = '', recursive = true) {
+	if (!client) throw new Error('MinIO client not configured')
 	await ensureBucketExists()
 	const objects = []
 	const stream = client.listObjects(bucketName, prefix, recursive)
@@ -104,6 +112,7 @@ function generateFinalObjectKey(demandaId, filename) {
 }
 
 async function generatePresignedDownloadUrl(objectKey, expires = 24 * 60 * 60) {
+	if (!client) throw new Error('MinIO client not configured')
 	const presignedUrl = await client.presignedUrl(
 		'GET',
 		bucketName,
@@ -126,6 +135,7 @@ async function generatePresignedUploadUrl(
 	filename,
 	expires = 24 * 60 * 60
 ) {
+	if (!client) throw new Error('MinIO client not configured')
 	try {
 		await ensureBucketExists()
 		const objectKey = generateFinalObjectKey(demandaId, filename)
@@ -150,6 +160,7 @@ async function generatePresignedUploadUrl(
 }
 
 async function remove(objectKey) {
+	if (!client) throw new Error('MinIO client not configured')
 	return await client.removeObject(bucketName, objectKey)
 }
 

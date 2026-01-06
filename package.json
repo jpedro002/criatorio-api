@@ -5,7 +5,8 @@
 	"main": "index.js",
 	"scripts": {
 		"build": "babel src --out-dir dist",
-		"dev": "babel-node --watch=src --watch-path=src src/index.js",
+		"dev": "bun --watch src/index.js",
+		"dev:babel": "babel-node --watch=src --watch-path=src src/index.js",
 		"start": "node dist/index.js",
 		"lint": "biome check .",
 		"format": "biome format .",

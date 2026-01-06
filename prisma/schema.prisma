@@ -7,7 +7,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["seguranca"]
+  schemas  = ["seguranca", "public"]
 }
 
 model User {
@@ -28,4 +28,42 @@ enum Role {
   ADMIN
 
   @@schema("seguranca")
+}
+
+model Ave {
+  id         String   @id @default(uuid())
+  nome       String   @db.VarChar(100)
+  anilha     String   @unique @db.VarChar(50)
+  nascimento DateTime
+  cig        String   @db.VarChar(50)
+  sexo       Sexo
+
+  // Relacionamentos de genealogia
+  paiId String? @map("pai_id")
+  maeId String? @map("mae_id")
+
+  pai Ave? @relation("PaiFilhos", fields: [paiId], references: [id], onDelete: SetNull)
+  mae Ave? @relation("MaeFilhos", fields: [maeId], references: [id], onDelete: SetNull)
+
+  filhosPai Ave[] @relation("PaiFilhos")
+  filhosMae Ave[] @relation("MaeFilhos")
+
+  // Metadados
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([paiId])
+  @@index([maeId])
+  @@index([sexo])
+  @@index([nascimento])
+  @@map("aves")
+  @@schema("public")
+}
+
+enum Sexo {
+  MACHO
+  FEMEA
+  INDETERMINADO
+
+  @@schema("public")
 }

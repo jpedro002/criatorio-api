@@ -1,5 +1,15 @@
 import { Prisma } from '@prisma/client'
 
+// Função auxiliar para verificar se é erro de validação Zod
+function hasZodFastifySchemaValidationErrors(error) {
+	return error.validation && Array.isArray(error.validation)
+}
+
+// Função auxiliar para verificar se é erro de serialização de resposta
+function isResponseSerializationError(error) {
+	return error.cause && error.cause.issues && Array.isArray(error.cause.issues)
+}
+
 // Novo errorHandler para Fastify: (error, request, reply)
 export function errorHandler(error, request, reply) {
 	// console.log(error)
